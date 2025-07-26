@@ -111,6 +111,38 @@ const PropertyDetail = () => {
     setContactForm({ name: '', email: '', phone: '', message: '' })
   }
 
+  const handleEmailClick = (email, name = '') => {
+    const subject = `Inquiry about ${property.title}`
+    const body = `Hello ${name ? name + ',' : ''}
+
+I am interested in your property: ${property.title} located at ${property.address.street}, ${property.address.city}, ${property.address.state}.
+
+Please provide more details about:
+- Property availability
+- Viewing arrangements
+- Any additional information
+
+Thank you!`
+
+    // Try mailto first
+    const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    
+    // Create a temporary link and click it
+    const link = document.createElement('a')
+    link.href = mailtoLink
+    link.click()
+    
+    // If mailto doesn't work, copy to clipboard as fallback
+    setTimeout(() => {
+      const emailContent = `To: ${email}\nSubject: ${subject}\n\n${body}`
+      navigator.clipboard.writeText(emailContent).then(() => {
+        toast.success('Email content copied to clipboard! You can paste it in your email client.')
+      }).catch(() => {
+        toast.error('Could not copy to clipboard. Please manually compose your email.')
+      })
+    }, 1000)
+  }
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -340,14 +372,30 @@ const PropertyDetail = () => {
               </div>
 
               <div className="space-y-3 mb-6">
-                {property.seller && (
-                  <a
-                    href={`mailto:${property.seller.email}?subject=Inquiry about ${encodeURIComponent(property.title)}&body=Hello ${encodeURIComponent(property.seller.name)},%0D%0A%0D%0AI am interested in your property: ${encodeURIComponent(property.title)} located at ${encodeURIComponent(property.address.street)}, ${encodeURIComponent(property.address.city)}, ${encodeURIComponent(property.address.state)}. Please provide more details.%0D%0A%0D%0AThank you!`}
+                {property.seller ? (
+                  <button
+                    onClick={() => handleEmailClick(property.seller.email, property.seller.name)}
                     className="w-full btn-primary flex items-center justify-center space-x-2"
                   >
                     <EnvelopeIcon className="h-4 w-4" />
                     <span>Send Email</span>
-                  </a>
+                  </button>
+                ) : property.contactInfo && property.contactInfo.email ? (
+                  <button
+                    onClick={() => handleEmailClick(property.contactInfo.email)}
+                    className="w-full btn-primary flex items-center justify-center space-x-2"
+                  >
+                    <EnvelopeIcon className="h-4 w-4" />
+                    <span>Send Email</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowContactForm(true)}
+                    className="w-full btn-primary flex items-center justify-center space-x-2"
+                  >
+                    <EnvelopeIcon className="h-4 w-4" />
+                    <span>Contact Owner</span>
+                  </button>
                 )}
               </div>
 
