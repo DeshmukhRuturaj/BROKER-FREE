@@ -10,7 +10,9 @@ dotenv.config();
 const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://localhost:3003'
+  'http://localhost:3003',
+  'https://property-listing-frontend.onrender.com',
+  'https://your-frontend-url.onrender.com' // Replace with your actual frontend URL
 ];
 // Middleware
 app.use(cors({
