@@ -29,22 +29,66 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB Atlas'))
-  .catch(err => console.error('MongoDB connection error:', err));
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI;
+    if (!mongoURI) {
+      console.error('MONGODB_URI environment variable is not set');
+      return;
+    }
+    
+    // Validate MongoDB URI format
+    if (!mongoURI.startsWith('mongodb://') && !mongoURI.startsWith('mongodb+srv://')) {
+      console.error('Invalid MongoDB URI format. Must start with mongodb:// or mongodb+srv://');
+      return;
+    }
+    
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('Connected to MongoDB Atlas');
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+  }
+};
+
+connectDB();
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/properties', require('./routes/properties'));
 app.use('/api/upload', require('./routes/upload'));
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// Catch all handler: send back React's index.html file for any non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
+// Serve static files from the React app (only in production)
+if (process.env.NODE_ENV === 'production') {
+  // Try multiple possible build paths
+  const possiblePaths = [
+    path.join(__dirname, '../dist'),
+    path.join(__dirname, '../../dist'),
+    path.join(__dirname, '../frontend/dist'),
+    path.join(__dirname, '../../frontend/dist')
+  ];
+  
+  let staticPath = null;
+  for (const buildPath of possiblePaths) {
+    if (require('fs').existsSync(path.join(buildPath, 'index.html'))) {
+      staticPath = buildPath;
+      break;
+    }
+  }
+  
+  if (staticPath) {
+    app.use(express.static(staticPath));
+    
+    // Catch all handler: send back React's index.html file for any non-API routes
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(staticPath, 'index.html'));
+    });
+  } else {
+    console.log('Frontend build not found. API-only mode.');
+  }
+}
 
 const PORT = process.env.PORT || 5000;
 
