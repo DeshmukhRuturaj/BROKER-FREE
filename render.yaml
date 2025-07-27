@@ -1,0 +1,59 @@
+services:
+  # Backend API Service
+  - type: web
+    name: property-listing-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+    healthCheckPath: /api/properties
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - backend/**
+        - package.json
+        - package-lock.json
+
+  # Frontend Web Service
+  - type: web
+    name: property-listing-frontend
+    env: static
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: VITE_API_URL
+        value: https://property-listing-backend.onrender.com
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - src/**
+        - public/**
+        - package.json
+        - package-lock.json
+        - vite.config.js
+        - tailwind.config.js
+        - postcss.config.js
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html 
